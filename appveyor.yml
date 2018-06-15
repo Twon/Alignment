@@ -25,12 +25,11 @@ build_script:
   - cd build
   - if "%platform%" == "x64" set cmake_platform=%platform%
   - cmake -g "Visual Studio 15 2017" .. -DCMAKE_GENERATOR_PLATFORM=%cmake_platform%
-  - dir
 
   # build it
   - if "%platform%" == "x86" set msbuild_platform=Win32
   - if "%platform%" == "x64" set msbuild_platform=%platform%
-  - msbuild alignment.sln /p:Configuration=%configuration% /toolsversion:15.0 /p:PlatformToolset=v141 /p:Platform=%msbuild_platform%
+  - msbuild alignment_example.sln /p:Configuration=%configuration% /toolsversion:15.0 /p:PlatformToolset=v141 /p:Platform=%msbuild_platform%
 
 test_script:
   - if "%configuration%" == "Debug" ctest -VV --schedule-random -C Debug
