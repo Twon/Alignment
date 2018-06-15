@@ -8,7 +8,7 @@ configuration:
 
 os: Visual Studio 2017
 
-clone_folder: c:\projects\skeleton
+clone_folder: c:\projects\alignment
 
 install:
   - git submodule update --init --recursive
@@ -20,7 +20,7 @@ build_script:
   - echo %configuration%
 
   # generate a solution file
-  - cd c:\projects\skeleton
+  - cd c:\projects\alignment
   - mkdir build
   - cd build
   - if "%platform%" == "x64" set cmake_platform=%platform%
@@ -29,7 +29,7 @@ build_script:
   # build it
   - if "%platform%" == "x86" set msbuild_platform=Win32
   - if "%platform%" == "x64" set msbuild_platform=%platform%
-  - msbuild skeleton.sln /p:Configuration=%configuration% /toolsversion:15.0 /p:PlatformToolset=v141 /p:Platform=%msbuild_platform%
+  - msbuild alignment.sln /p:Configuration=%configuration% /toolsversion:15.0 /p:PlatformToolset=v141 /p:Platform=%msbuild_platform%
 
 test_script:
   - if "%configuration%" == "Debug" ctest -VV --schedule-random -C Debug
