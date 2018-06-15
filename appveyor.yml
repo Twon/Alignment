@@ -25,6 +25,7 @@ build_script:
   - cd build
   - if "%platform%" == "x64" set cmake_platform=%platform%
   - cmake -g "Visual Studio 15 2017" .. -DCMAKE_GENERATOR_PLATFORM=%cmake_platform%
+  - dir
 
   # build it
   - if "%platform%" == "x86" set msbuild_platform=Win32
