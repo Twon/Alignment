@@ -1,0 +1,80 @@
+# Based on https://github.com/Microsoft/GSL/blob/master/.travis.yml
+
+language: cpp
+script: cmake
+notifications:
+  email: false
+
+os: linux
+dist: trusty
+
+matrix:
+  include:
+
+    ##########################################################################
+    # Clang on OSX
+    # Travis seems to take longer to start OSX instances,
+    # so leave this first for the overall build to be faster
+    ##########################################################################
+
+    # XCode 9.3
+    - env: COMPILER=clang++ BUILD_TYPE=Debug GSL_CXX_STANDARD=17
+      os: osx
+      osx_image: xcode9.3
+      compiler: clang
+
+    - env: COMPILER=clang++ BUILD_TYPE=Release GSL_CXX_STANDARD=17
+      os: osx
+      osx_image: xcode9.3
+      compiler: clang
+
+    ##########################################################################
+    # Clang on Linux
+    ##########################################################################
+
+    # Clang 5.0
+    - env: COMPILER=clang++-5.0 BUILD_TYPE=Debug GSL_CXX_STANDARD=17
+      addons: &clang50
+        apt:
+          packages:
+            - clang-5.0
+            - g++-7
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+            - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-5.0 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+
+    - env: COMPILER=clang++-5.0 BUILD_TYPE=Release GSL_CXX_STANDARD=17
+      addons: *clang50
+
+    ##########################################################################
+    # GCC on Linux
+    ##########################################################################
+
+    # GCC 7 c++17 
+    - env: COMPILER=g++-7 BUILD_TYPE=Debug GSL_CXX_STANDARD=17
+      addons: &gcc7
+        apt:
+          packages: g++-7
+          sources:
+            - ubuntu-toolchain-r-test
+
+    - env: COMPILER=g++-7 BUILD_TYPE=Release GSL_CXX_STANDARD=17
+      addons: *gcc7
+
+install:
+  # Set the ${CXX} variable properly
+  - export CXX=${COMPILER}
+  - ${CXX} --version
+
+before_script:
+  # have CMake to generate build files
+  - cd "${TRAVIS_BUILD_DIR}"
+  - mkdir build && cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DGSL_CXX_STANDARD=$GSL_CXX_STANDARD
+  
+script:
+  # build and run tests
+  - cmake --build . -- -j${JOBS}
+  - ctest --output-on-failure -j${JOBS}
