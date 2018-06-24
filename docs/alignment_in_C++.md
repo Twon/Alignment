@@ -3,7 +3,7 @@
 Every type in C++ has the property called alignment requirement, which specifies the number of bytes between successive addresses at which objects of this type can be allocated. For instance, if you create a double on either the stack or the heap, it is guaranteed to be aligned to at least the size of a double (a double is 8-bytes so will always be aligned to an 8-byte boundary). The reason for this relates to restrictions placed on alignment by the underlying hardware architecture when handling and accessing data. Certain architectures such as ARM or MIPS will generate a hardware level exception when accessing data which is not aligned with alignment boundaries of at least a type's size. Whereas other architecture such as PowerPC may generate multiple loads for unaligned data which is less efficient than the single load required to load data which is optimally aligned. To ensure consistency across the language C++ make certain guarantees about alignment. This article will examine what these guarantees are, how they have changed with the evolution of the language and what the implications of these are.
 
 ## C++ 03
-Earlier versions of C++ have made guarantees about alignment requirements for fundamental types. As a result users could relax safely in the knowledge that when building classes composed of fundamental types that all alignment requirements would be respected. However, this had a side effect; for compilers to respect these alignment requirements it is often necessary for compilers to insert invisible padding elements inside of classes [Ericson]. For instance, consider the simple structure:
+Earlier versions of C++ have made guarantees about alignment requirements for fundamental types. As a result users could relax safely in the knowledge that when building classes composed of fundamental types that all alignment requirements would be respected. However, this had a side effect; for compilers to respect these alignment requirements it is often necessary for compilers to insert invisible padding elements inside of classes [1]. For instance, consider the simple structure:
 
 ```cpp
 struct X
@@ -125,7 +125,7 @@ struct __declspec(align((16))) float4 {
 
 float4 *pData = new float4[1000];
 ```
-In the above example not only is an implementation of C++ not required to allocate properly aligned memory for the array, for practical purposes, it is very nearly required to do the allocation incorrectly [Nelson]. Looking at how compilers implement vector deleting destructors we can see that they are required to insert the size of a dynamically allocated array into the beginning of the allocated block of memory so that the array delete knows how many elements in an array must have their destructors called. The upshot of this is array allocations are offset by the size of size_t.
+In the above example not only is an implementation of C++ not required to allocate properly aligned memory for the array, for practical purposes, it is very nearly required to do the allocation incorrectly [2]. Looking at how compilers implement vector deleting destructors we can see that they are required to insert the size of a dynamically allocated array into the beginning of the allocated block of memory so that the array delete knows how many elements in an array must have their destructors called. The upshot of this is array allocations are offset by the size of size_t.
 
 So how can we safely create aligned dynamically allocate memory? Once again its compiler specific implementations to the rescue, except this time we still have some manual work to do our self. Microsoft Visual Studio and the Intel C++ Compiler on Windows provide _aligned_malloc and _aligned_free for the creation of aligned memory, and GCC, Clang and the Intel C++ Compiler on Linux support the use of the memalign and free functions. However both compiler mechanisms for aligned allocation only allocate raw storage, so any use with non-POD types requires manually calling their constructors and destructors to ensure proper initialisation and clean-up:
 
@@ -358,7 +358,7 @@ void scale(float* x, int size, float factor)
 }
 ```
 
-So we still have some ambiguity within the language currently. However, proposals for the C++ 20 standard have suggested adding a new attribute to unify this feature in the language. If this is accepted then in future versions of the language you will be able to use the following syntax [Doumler]:
+So we still have some ambiguity within the language currently. However, proposals for the C++ 20 standard have suggested adding a new attribute to unify this feature in the language. If this is accepted then in future versions of the language you will be able to use the following syntax [3]:
 
 ```cpp
 void add_64aligned([[assume_aligned(64)]] float* x, [assume_aligned(64)]] float* y, int
@@ -370,10 +370,11 @@ size)
 ```
 
 ## Conclusions
-The C++ language has taken significant steps in recent revisions to the language to simplify the alignment of data, adding core features to the language to hide the complexity. This means for users this area of the language just works, without having to manually intervene to get the desired behaviour as has historically been the case [Albrecht]. This, however, does not affect the care we must take around compiler generated padding caused by the layout of types we as programmers write, here we require an understanding of alignment requirements within the language and a careful eye.
+The C++ language has taken significant steps in recent revisions to the language to simplify the alignment of data, adding core features to the language to hide the complexity. This means for users this area of the language just works, without having to manually intervene to get the desired behaviour as has historically been the case [5]. This, however, does not affect the care we must take around compiler generated padding caused by the layout of types we as programmers write, here we require an understanding of alignment requirements within the language and a careful eye.
 
 ## References
-[Ericson] Ericson, Memory Optimization. Games Developers Conference 2003
-[Nelson] Dynamic memory allocation for over-aligned data. P0035R2.
-[Doumler] The assume aligned attribute. ISOCPP SG14 - Low Latency/Game Dev/Financial/Trading/ Simulation/Embedded Devices
-[Albrecht] Pitfalls Of Object Oriented Programming. Sony Computer Entertainment Europe, Research & Development Division
+[[1] Christer Ericson. Memory Optimization. Games Developers Conference 2003](http://realtimecollisiondetection.net/pubs/GDC03_Ericson_Memory_Optimization.ppt)  
+[[2] Clark Nelson. Dynamic memory allocation for over-aligned data. P0035R2](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r2.html)  
+[[3] Timur Doumler & Chandler Carruth. The assume aligned attribute. ISOCPP SG14 - Low Latency/Game Dev/Financial/Trading/ Simulation/Embedded Devices](https://wg21.link/p0886)  
+[[4] Timur Doumler & Chandler Carruth. std::assume_aligned.  P1007R0](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1007r0.pdf)  
+[[5] Tony Albrecht. Pitfalls Of Object Oriented Programming. Sony Computer Entertainment Europe, Research & Development Division](https://web.archive.org/web/20150212013524/http://research.scee.net/files/presentations/gcapaustralia09/Pitfalls_of_Object_Oriented_Programming_GCAP_09.pdf)  
