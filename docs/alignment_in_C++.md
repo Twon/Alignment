@@ -1,23 +1,9 @@
 # What is alignment and why should I care?
 
-Every type in C++ has the property called alignment requirement, which specifies the number of bytes between
-successive addresses at which objects of this type can be allocated. For instance, if you create a double on
-either the stack or the heap, it is guaranteed to be aligned to at least the size of a double (a double is 8-bytes
-so will always be aligned to an 8-byte boundary). The reason for this relates to restrictions placed on alignment
-by the underlying hardware architecture when handling and accessing data. Certain architectures such as
-ARM or MIPS will generate a hardware level exception when accessing data which is not aligned with alignment
-boundaries of at least a type's size. Whereas other architecture such as PowerPC may generate multiple loads
-for unaligned data which is less efficient than the single load required to load data which is optimally aligned.
-To ensure consistency across the language C++ make certain guarantees about alignment. This article will
-examine what these guarantees are, how they have changed with the evolution of the language and what the
-implications of these are.
+Every type in C++ has the property called alignment requirement, which specifies the number of bytes between successive addresses at which objects of this type can be allocated. For instance, if you create a double on either the stack or the heap, it is guaranteed to be aligned to at least the size of a double (a double is 8-bytes so will always be aligned to an 8-byte boundary). The reason for this relates to restrictions placed on alignment by the underlying hardware architecture when handling and accessing data. Certain architectures such as ARM or MIPS will generate a hardware level exception when accessing data which is not aligned with alignment boundaries of at least a type's size. Whereas other architecture such as PowerPC may generate multiple loads for unaligned data which is less efficient than the single load required to load data which is optimally aligned. To ensure consistency across the language C++ make certain guarantees about alignment. This article will examine what these guarantees are, how they have changed with the evolution of the language and what the implications of these are.
 
 ## C++ 03
-Earlier versions of C++ have made guarantees about alignment requirements for fundamental types. As a
-result users could relax safely in the knowledge that when building classes composed of fundamental types
-that all alignment requirements would be respected. However, this had a side effect; for compilers to respect
-these alignment requirements it is often necessary for compilers to insert invisible padding elements inside of
-classes [Ericson]. For instance, consider the simple structure:
+Earlier versions of C++ have made guarantees about alignment requirements for fundamental types. As a result users could relax safely in the knowledge that when building classes composed of fundamental types that all alignment requirements would be respected. However, this had a side effect; for compilers to respect these alignment requirements it is often necessary for compilers to insert invisible padding elements inside of classes [Ericson]. For instance, consider the simple structure:
 
 ```cpp
 struct X
@@ -31,10 +17,7 @@ struct X
 };
 ```
 
-In order for compilers to respect the alignment requirements of this structure, the compiler inserts invisible
-elements to pad out the structures data layout which increases its size requirements. The author of this
-structure may well have assumed the size of this structure will be 24 bytes long, but the layout the compiler has
-to generate is actually 40 bytes in length and looks more like the following:
+In order for compilers to respect the alignment requirements of this structure, the compiler inserts invisible elements to pad out the structures data layout which increases its size requirements. The author of this structure may well have assumed the size of this structure will be 24 bytes long, but the layout the compiler has to generate is actually 40 bytes in length and looks more like the following:
 
 ```cpp
 struct Y
@@ -51,16 +34,7 @@ struct Y
     float pad_f[1]; // Compiler generated padding
 };
 ```
-This example makes visible what is going on behind the scenes of a compiler to ensure alignment
-requirements are met. Because a 64-bit integer must be aligned to 8 bytes the compiler has to insert 7 bytes
-of padding after data member a and b. Similar padding is needed elsewhere to meet the specific alignment
-requirements of each data member. One point of interest in the insertion of pad_f by the compiler, while this
-might initially not appear to be needed for single instances of the class it becomes apparent that this must be
-inserted in order for the compiler to ensure that for an array of type Y, each instance of the Y struct is correctly
-aligned to meet the requirements of its internal data members. In particular without pad_f then data member b
-in the second element of an array would be 4 byte aligned, not 8-byte aligned. Of course, it's possible to ensure
-this padding is not necessary and that the resulting data structure is 24-bytes in length, however, to do so we
-must take care to manually align each data member as such:
+This example makes visible what is going on behind the scenes of a compiler to ensure alignment requirements are met. Because a 64-bit integer must be aligned to 8 bytes the compiler has to insert 7 bytes of padding after data member a and b. Similar padding is needed elsewhere to meet the specific alignment requirements of each data member. One point of interest in the insertion of pad_f by the compiler, while this might initially not appear to be needed for single instances of the class it becomes apparent that this must be inserted in order for the compiler to ensure that for an array of type Y, each instance of the Y struct is correctly aligned to meet the requirements of its internal data members. In particular without pad_f then data member b in the second element of an array would be 4 byte aligned, not 8-byte aligned. Of course, it's possible to ensure this padding is not necessary and that the resulting data structure is 24-bytes in length, however, to do so we must take care to manually align each data member as such:
 
 ```cpp
 struct Z
@@ -74,10 +48,7 @@ struct Z
 };
 ```
 
-This, of course, creates other problems. In C++ declaration order of member variables in a structure or
-class also defines the initialisation order of member variables in a constructor. So now if we try to create a
-constructor for structure Z which initialises members in alphabetical order we might then be surprised to find
-out this is not the order they are initialised in.
+This, of course, creates other problems. In C++ declaration order of member variables in a structure or class also defines the initialisation order of member variables in a constructor. So now if we try to create a constructor for structure Z which initialises members in alphabetical order we might then be surprised to find out this is not the order they are initialised in.
 
 ```cpp
 struct Z
@@ -95,30 +66,14 @@ struct Z
 };
 ```
 
-Thankfully in this example, that's not a huge problem, but as soon the initialisation order of data members matter
-this restriction creates problems. For this reason, worrying about data layout is something best left to compilers
-or library vendors unless explicitly required. Let's consider a case when this is explicitly required.
+Thankfully in this example, that's not a huge problem, but as soon the initialisation order of data members matter this restriction creates problems. For this reason, worrying about data layout is something best left to compilers or library vendors unless explicitly required. Let's consider a case when this is explicitly required.
 
 ## Alignment requirements for vectorisation
-Modern processors are built with SIMD capabilities. That is the ability to execute instructions on multiple
-data elements using specialised instructions, which allows for a form of parallelism known as instruction level
-parallelism.
+Modern processors are built with SIMD capabilities. That is the ability to execute instructions on multiple data elements using specialised instructions, which allows for a form of parallelism known as instruction level parallelism.
 
 [[SIMD PICTURE]]
 
-One side effect of using these instructions is that in some case they require using aligned data (resulting
-in alignment exceptions when not aligned), and when they do work with unaligned data they may generate
-multiple loads or stores across the CPU bus when they straddle a CPU cache boundary (typically 32 or 64
-bytes) resulting in a performance slow down. For direct interaction with these instructions, one must use
-an extension to the fundamental types provided by the C++ standard, in part because of these instructions a
-dependent on the underlying architecture of the process. So for instance compilers supporting the x86 or
-x64 architectures provide support for the use of the __m128 and __m256 types, which at 128-bits and 256-
-bits respectively are larger are larger than any of the existing fundamental types in the language. However, these still have alignment requirements matching those of the fundamental types of the language, namely that
-alignment must be greater than or equal to these type's size. That is a __m128 must be aligned to a 128-bit or
-16-byte boundary or greater, and a __m256 must be aligned to a 256-bit or 32-byte boundary or greater.
-This raises the question how did compilers ensure these alignment requirements are guaranteed? Peaking at
-the definition of this type in the Visual Studio compiler provides some insights, namely compilers support this
-alignment requirement with a compiler specific extension:
+One side effect of using these instructions is that in some case they require using aligned data (resulting in alignment exceptions when not aligned), and when they do work with unaligned data they may generate multiple loads or stores across the CPU bus when they straddle a CPU cache boundary (typically 32 or 64 bytes) resulting in a performance slow down. For direct interaction with these instructions, one must use an extension to the fundamental types provided by the C++ standard, in part because of these instructions a dependent on the underlying architecture of the process. So for instance compilers supporting the x86 or x64 architectures provide support for the use of the __m128 and __m256 types, which at 128-bits and 256-bits respectively are larger are larger than any of the existing fundamental types in the language. However, these still have alignment requirements matching those of the fundamental types of the language, namely that alignment must be greater than or equal to these type's size. That is a __m128 must be aligned to a 128-bit or 16-byte boundary or greater, and a __m256 must be aligned to a 256-bit or 32-byte boundary or greater. This raises the question how did compilers ensure these alignment requirements are guaranteed? Peaking at the definition of this type in the Visual Studio compiler provides some insights, namely compilers support this alignment requirement with a compiler specific extension:
 
 ```cpp
 /*
@@ -128,8 +83,7 @@ typedef union __declspec(intrin_type) __declspec(align(32)) __m256 {
     float m256_f32[8];
 } __m256;
 ```
-Microsoft Visual Studio and the Intel C++ Compiler for Windows support the syntax __declspec(align( # )) where as GCC, Clang and the Intel C++ Compiler for Linux support the syntax __attribute__ ((aligned( # ))).
-These compiler extensions tell the compiler to ensure that data is aligned to the boundary specified in the alignment statement, with a few restrictions:
+Microsoft Visual Studio and the Intel C++ Compiler for Windows support the syntax __declspec(align( # )) where as GCC, Clang and the Intel C++ Compiler for Linux support the syntax __attribute__ ((aligned( # ))).  These compiler extensions tell the compiler to ensure that data is aligned to the boundary specified in the alignment statement, with a few restrictions:
 - The number must be a positive integer that is a power of two.
 - The number must be less than or equal to 128.
 - The number must be known at compile time.
@@ -188,6 +142,8 @@ float4 *p = new (pArrayBuffer) float4[num_elements];
 
 // Use the array
 // ...
+
+// Manually desctuct elements and free memory
 for (std::size_t i = 0; i < num_elements; ++i)
 {
     p[i].~float4();
@@ -195,8 +151,7 @@ for (std::size_t i = 0; i < num_elements; ++i)
 _aligned_free(pArrayBuffer);
 ```
 
-In this example we have modified float4 to have a constructor using the aggregate initialisation syntax of C ++03 to zero every element of the array data member f. However this means that it is not enough to just create a buffer of memory for the array, we must force initialisation of each element in the array by using the placement array new operator which allows calling new on a pre-allocated block of memory. In turn, once
-we have finished using the array, to ensure proper clean, we must manually loop through the array and call each instance's destructor directly. Once the array in uninitialised we can then free the underlying aligned memory buffer. As you can see this is error-prone and complex, requiring special functions in order to be able to allocate and initialise the memory for the array. There is also another problem, should any exceptions be thrown either from the constructor of float4 or in the usage of the array we will leak resource because we have not made use of the resource acquisition is initialisation idiom.
+In this example we have modified float4 to have a constructor using the aggregate initialisation syntax of C ++03 to zero every element of the array data member f. However this means that it is not enough to just create a buffer of memory for the array, we must force initialisation of each element in the array by using the placement array new operator which allows calling new on a pre-allocated block of memory. In turn, once we have finished using the array, to ensure proper clean, we must manually loop through the array and call each instance's destructor directly. Once the array in uninitialised we can then free the underlying aligned memory buffer. As you can see this is error-prone and complex, requiring special functions in order to be able to allocate and initialise the memory for the array. There is also another problem, should any exceptions be thrown either from the constructor of float4 or in the usage of the array we will leak resource because we have not made use of the resource acquisition is initialisation idiom.
 
 Let's see what we can do to clean this up a bit. We'll make use of C++03 overloading of the array new and array delete operators at the class level for float4 (please note for simplicities sake I've avoided the issue of throwing bad_alloc if a null pointer is returned from the allocation routine). This automates away some of the complications. We now don't have to use the placement new operator or manually call the destructors for all elements in the array. Moreover, the compiler is smart enough to over-allocate by enough storage to insert
 the secret size variable which is required for generation of the vector deleting destructor while still meeting the alignment requirements. And finally, while we were unable to solve the RAII problem which could bite under the presence of exceptions with the standard template libraries auto_ptr, which does not support arrays, we were able to solve this issue with the Boost libraries scoped_array smart pointer class.
@@ -208,8 +163,10 @@ public:
     float f[4];
     void* operator new[](std::size_t size)
     {
-        return _aligned_malloc(size, 16);  // Should throw std::bad_alloc if
-_aligned_malloc returns null.
+        void* mem = _aligned_malloc(size, 16);
+        if (!mem)
+            throw std::bad_alloc();
+        return mem;
     }
 
     void operator delete[](void* p)
@@ -227,9 +184,7 @@ boost::scoped_array<float4> p(new float4[num_elements]);
 p.reset(); // Delete the array
 ```
 
-So this is a big improvement over the first iteration but still, it is not exactly easy to use. We had to overload member functions on the class which is acceptable if we are the authors of this class, but if this was a class
-in an external library we may not have this option available to us. We should also overload the new and delete operators for this class, and properly handle throwing std::bad_alloc exceptions if the allocations throw.
-Potentially we may also choose to implement the no-throw variants of these functions. But even if we do all of this there is still another problem. Do you see it?
+So this is a big improvement over the first iteration but still, it is not exactly easy to use. We had to overload member functions on the class which is acceptable if we are the authors of this class, but if this was a class in an external library we may not have this option available to us. We should also overload the new and delete operators for this class, and properly handle throwing std::bad_alloc exceptions if the allocations throw. Potentially we may also choose to implement the no-throw variants of these functions. But even if we do all of this there is still another problem. Do you see it?
 
 Its the issue of ensuring correct alignment for types requiring alignment during dynamic allocation of a class that encapsulates them. For instance, even if we have overloaded all of the new and delete methods to ensure direct allocations of float4 are aligned, we can't protect against the following:
 
@@ -241,8 +196,10 @@ public:
 
     void* operator new[](std::size_t size)
     {
-        return _aligned_malloc(size, 16);  // Should throw std::bad_alloc if
-_aligned_malloc returns null.
+        void* mem = _aligned_malloc(size, 16);
+        if (!mem)
+            throw std::bad_alloc();
+        return mem;
     }
 
     void operator delete[](void* p)
@@ -270,6 +227,7 @@ With the major overhaul of the language which was C++ 11, there have been many i
 
 ```cpp
 #include <iostream>
+
 class alignas(16) float4 {
     float f[4];
 };
@@ -317,9 +275,7 @@ int main() {
 }
 ```
 
-Now we are safely able to specify a types alignment requirements, safe in the knowledge that dynamic memory allocation and deallocation will just "do the right thing". Moreover, this can safely be used in conjunction with the standard library types from C++11 (using the std::make_unique function from C++14) to ensure we use
-the RAII idiom to guard against any resource leaks and ensure our code is exception safe. But we still have one more use case we want to the language to solve for us, that's alignment of embedded classes in a class without alignment requirements specified.
-
+Now we are safely able to specify a types alignment requirements, safe in the knowledge that dynamic memory allocation and deallocation will just "do the right thing". Moreover, this can safely be used in conjunction with the standard library types from C++11 (using the std::make_unique function from C++14) to ensure we use the RAII idiom to guard against any resource leaks and ensure our code is exception safe. But we still have one more use case we want to the language to solve for us, that's alignment of embedded classes in a class without alignment requirements specified.
 
 Thankfully it turns out our friend, the alignas keyword, in conjunction with the existing guarantees in the language around alignment requirements solves this problem for us. The language guarantees that for
 any type it must respect the alignment requirements of any member types it owns. This means if we revisit our earlier example, that specifying an alignment requirement on float4 is enough to ensure the alignment requirement is propagated to the line structure. Now when we use dynamic memory allocation on that class it calls the overload of new which take the alignment requirement and ensure that everything is aligned correctly as we would like.
@@ -338,7 +294,9 @@ int main() {
         float4 start;
         float4 end;
     };
+
     std::cout << "Alignment of - line alignment of 16: " << alignof(line) << "\n";
+
     // line has std::unique_ptr<line> pLine(std::make_unique<line>());
     // Do stuff with pLine
     ...
@@ -400,7 +358,6 @@ void scale(float* x, int size, float factor)
 }
 ```
 
-
 So we still have some ambiguity within the language currently. However, proposals for the C++ 20 standard have suggested adding a new attribute to unify this feature in the language. If this is accepted then in future versions of the language you will be able to use the following syntax [Doumler]:
 
 ```cpp
@@ -413,8 +370,7 @@ size)
 ```
 
 ## Conclusions
-The C++ language has taken significant steps in recent revisions to the language to simplify the alignment
-of data, adding core features to the language to hide the complexity. This means for users this area of the language just works, without having to manually intervene to get the desired behaviour as has historically been the case [Albrecht]. This, however, does not affect the care we must take around compiler generated padding caused by the layout of types we as programmers write, here we require an understanding of alignment requirements within the language and a careful eye.
+The C++ language has taken significant steps in recent revisions to the language to simplify the alignment of data, adding core features to the language to hide the complexity. This means for users this area of the language just works, without having to manually intervene to get the desired behaviour as has historically been the case [Albrecht]. This, however, does not affect the care we must take around compiler generated padding caused by the layout of types we as programmers write, here we require an understanding of alignment requirements within the language and a careful eye.
 
 ## References
 [Ericson] Ericson, Memory Optimization. Games Developers Conference 2003
