@@ -12,7 +12,7 @@ To ensure consistency across the language C++ make certain guarantees about alig
 examine what these guarantees are, how they have changed with the evolution of the language and what the
 implications of these are.
 
-# C++ 03
+## C++ 03
 Earlier versions of C++ have made guarantees about alignment requirements for fundamental types. As a
 result users could relax safely in the knowledge that when building classes composed of fundamental types
 that all alignment requirements would be respected. However, this had a side effect; for compilers to respect
@@ -99,7 +99,7 @@ Thankfully in this example, that's not a huge problem, but as soon the initialis
 this restriction creates problems. For this reason, worrying about data layout is something best left to compilers
 or library vendors unless explicitly required. Let's consider a case when this is explicitly required.
 
-# Alignment requirements for vectorisation
+## Alignment requirements for vectorisation
 Modern processors are built with SIMD capabilities. That is the ability to execute instructions on multiple
 data elements using specialised instructions, which allows for a form of parallelism known as instruction level
 parallelism.
@@ -161,7 +161,7 @@ private:
 ```
 But wouldn't this be nice if this just worked?
 
-# Alignment of dynamically allocated memory
+## Alignment of dynamically allocated memory
 This brings us to the next problem, heap-allocated memory. The extensions we have just looked at apply to structures and classes the compiler has control of, namely those declared global, statically or locally on the stack. If however, we need to allocate storage for an aligned type at run-time then the compiler has no control on this:
 
 ```cpp
@@ -265,7 +265,7 @@ Now if we create an instance of a line structure via dynamic allocation all bets
 
 While the examples are somewhat contrived they are representative of real-life issues this author has encountered in writing high-performance software libraries. This had been an area of the language which was sorely neglected. However, this is no longer the case, this area has now improved significantly with C ++11/14/17. The rest of this article will look at developments in the language which significantly improve this area.
 
-# C++ 11
+## C++ 11
 With the major overhaul of the language which was C++ 11, there have been many improvements to the language in regards to alignment. The first is the standardisation of alignment specification from compiler-specific extension to a keyword in the language. The alignas keyword instructs a compiler of a types alignment requirements in a language conformant manner.   Additionally, the language now has the alignof keyword to allow querying of a type's expected alignment:
 
 ```cpp
@@ -285,7 +285,7 @@ int main() {
 
 The standard now provides a type, std::max_align_t, whose alignment guaranteed is required to be met by all memory allocation routines (malloc, new, etc). This goes a long way to unifying alignment requirements for compiler controlled allocation within the language. However, it fails to address the issue of dynamic memory allocation. For that we need C++17.
 
-# C++ 17
+## C++ 17
 In the latest C++ standard aligned allocation of memory is now standardised in the language, the function std::aligned_alloc creates aligned memory which can be used in conjunction with std::free. Importantly this removes the need for us to use compiler-specific aligned memory allocation functions and solves the issue of needing to use a specific aligned deallocation method that plagues the Microsoft _aligned_malloc and _aligned_free pair.
 But the standard does not stop there providing alternative overloads for new and delete which make use of a type's alignment requirements when allocating. Versions are provided for standard, no throw, placement new and class variants of these operators:
 
@@ -345,7 +345,7 @@ int main() {
  }
 ```
 
-# Alignment A Solved Problem?
+## Alignment A Solved Problem?
 So it now looks like we can do everything we want with alignment through core features of the C++17 language. But there is still one important area missing. That of ensuring the compiler has all of the potential optimisation opportunities available to it to make full use of auto vectorisation. And this is one of the big benefits of the culminating changes to alignment that C++11 and 17 bring, they allow the compiler to safely make assumptions about alignment of a type for all instances of that type regardless of whether it is heap or stack allocated, and then safely make optimisations based on this knowledge. But what about cases where alignment specifications are not part of the type, for instance, consider the following case:
 
 ```cpp
@@ -412,12 +412,12 @@ size)
 }
 ```
 
-# Conclusions
+## Conclusions
 The C++ language has taken significant steps in recent revisions to the language to simplify the alignment
 of data, adding core features to the language to hide the complexity. This means for users this area of the language just works, without having to manually intervene to get the desired behaviour as has historically been the case [Albrecht]. This, however, does not affect the care we must take around compiler generated padding caused by the layout of types we as programmers write, here we require an understanding of alignment requirements within the language and a careful eye.
 
-# References
-[Ericson] Ericson, Memory Optimization. Games Developers Conference 2003 
+## References
+[Ericson] Ericson, Memory Optimization. Games Developers Conference 2003
 [Nelson] Dynamic memory allocation for over-aligned data. P0035R2.
 [Doumler] The assume aligned attribute. ISOCPP SG14 - Low Latency/Game Dev/Financial/Trading/ Simulation/Embedded Devices
 [Albrecht] Pitfalls Of Object Oriented Programming. Sony Computer Entertainment Europe, Research & Development Division
