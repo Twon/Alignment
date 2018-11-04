@@ -374,7 +374,7 @@ The C++ language has taken significant steps in recent revisions to the language
 
 ## References
 [[1] Christer Ericson. Memory Optimization. Games Developers Conference 2003](http://realtimecollisiondetection.net/pubs/GDC03_Ericson_Memory_Optimization.ppt)  
-[[2] Clark Nelson. Dynamic memory allocation for over-aligned data. P0035R2](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r2.html)  
+[[2] Clark Nelson. Dynamic memory allocation for over-aligned data. P0035R4](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html)
 [[3] Timur Doumler & Chandler Carruth. The assume aligned attribute. ISOCPP SG14 - Low Latency/Game Dev/Financial/Trading/ Simulation/Embedded Devices](https://wg21.link/p0886)  
 [[4] Timur Doumler & Chandler Carruth. std::assume_aligned.  P1007R0](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p1007r0.pdf)  
 [[5] Tony Albrecht. Pitfalls Of Object Oriented Programming. Sony Computer Entertainment Europe, Research & Development Division](https://web.archive.org/web/20150212013524/http://research.scee.net/files/presentations/gcapaustralia09/Pitfalls_of_Object_Oriented_Programming_GCAP_09.pdf)  
