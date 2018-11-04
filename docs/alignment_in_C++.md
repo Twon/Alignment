@@ -262,7 +262,7 @@ So armed with this knowledge lets revisit our earlier example of using dynamical
 
 ```cpp
 #include <memory>
-#include <aligned_new>
+
 int main() {
     class alignas(16) float4 {
         float f[4];
@@ -283,7 +283,6 @@ any type it must respect the alignment requirements of any member types it owns.
 ```cpp
 #include <iostream>
 #include <memory>
-#include <aligned_new>
 
 int main() {
     class alignas(16) float4 {
